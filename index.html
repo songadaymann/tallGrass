@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tallgrass</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a2e;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+        
+        #status {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #status-progress {
+            width: 300px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #555;
+            margin: 10px auto;
+        }
+        
+        #status-progress-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #4a9eff, #00ff88);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        #status-notice {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+    <link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="status">
+        <div id="status-progress">
+            <div id="status-progress-inner"></div>
+        </div>
+        <div id="status-notice">Loading...</div>
+    </div>
+    
+    <script>
+        // --- mann.cool Virtual Controller Support ---
+        // This allows the game to receive input from mann.cool's virtual D-pad and buttons
+        // when embedded in an iframe on mobile devices
+        
+        window.addEventListener('message', (event) => {
+            const { type, key, eventType } = event.data || {};
+            
+            // Resume Godot's audio context if suspended
+            // (Browser suspends audio when clicking outside the iframe)
+            if (window.Godot && window.Godot.audio && window.Godot.audio.ctx) {
+                if (window.Godot.audio.ctx.state === 'suspended') {
+                    window.Godot.audio.ctx.resume();
+                }
+            }
+            
+            // Handle keyboard events from virtual controller
+            if (type === 'keyEvent' && key && eventType) {
+                const canvas = document.querySelector('#canvas');
+                if (canvas) {
+                    // Map mann.cool keys to Godot-compatible key codes
+                    let mappedKey = key;
+                    let mappedCode = key;
+                    
+                    // Handle arrow keys
+                    if (key === 'ArrowUp') {
+                        mappedCode = 'ArrowUp';
+                    } else if (key === 'ArrowDown') {
+                        mappedCode = 'ArrowDown';
+                    } else if (key === 'ArrowLeft') {
+                        mappedCode = 'ArrowLeft';
+                    } else if (key === 'ArrowRight') {
+                        mappedCode = 'ArrowRight';
+                    } else if (key === ' ' || key === 'Space') {
+                        mappedKey = ' ';
+                        mappedCode = 'Space';
+                    }
+                    
+                    // Dispatch the keyboard event to the canvas
+                    canvas.dispatchEvent(new KeyboardEvent(eventType, {
+                        key: mappedKey,
+                        code: mappedCode,
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    }));
+                    
+                    // Also dispatch to document for Godot's input system
+                    document.dispatchEvent(new KeyboardEvent(eventType, {
+                        key: mappedKey,
+                        code: mappedCode,
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    }));
+                }
+            }
+            
+            // Handle click events (for attack/action buttons)
+            if (type === 'clickEvent' && eventType) {
+                const canvas = document.querySelector('#canvas');
+                if (canvas) {
+                    // Get canvas center for click position
+                    const rect = canvas.getBoundingClientRect();
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    canvas.dispatchEvent(new MouseEvent(eventType, {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                        clientX: rect.left + centerX,
+                        clientY: rect.top + centerY,
+                        button: 0  // Left click
+                    }));
+                }
+            }
+        });
+        
+        // Detect if running in iframe and log it
+        if (window.parent !== window) {
+            console.log('Tallgrass: Running inside iframe (mann.cool mode)');
+        }
+    </script>
+    
+    <script src="index.js"></script>
+    <script>
+        const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":808396376,"index.wasm":36145869},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+        const engine = new Engine(GODOT_CONFIG);
+        
+        const statusProgress = document.getElementById('status-progress-inner');
+        const statusNotice = document.getElementById('status-notice');
+        const status = document.getElementById('status');
+        
+        // Update loading progress
+        function setStatusProgress(progress) {
+            statusProgress.style.width = (progress * 100) + '%';
+        }
+        
+        function setStatusNotice(text) {
+            statusNotice.textContent = text;
+        }
+        
+        function displayFailure(message) {
+            statusNotice.textContent = message;
+            statusNotice.style.color = '#ff6b6b';
+        }
+        
+        // Start the engine
+        engine.startGame({
+            'onProgress': function(current, total) {
+                if (total > 0) {
+                    setStatusProgress(current / total);
+                    setStatusNotice('Loading... ' + Math.round((current / total) * 100) + '%');
+                }
+            }
+        }).then(() => {
+            // Game loaded successfully
+            status.style.display = 'none';
+            console.log('Tallgrass: Game loaded successfully');
+            
+            // Focus the canvas for keyboard input
+            const canvas = document.getElementById('canvas');
+            if (canvas) {
+                canvas.focus();
+            }
+        }).catch((err) => {
+            displayFailure('Error: ' + err.message);
+            console.error('Tallgrass: Failed to load game', err);
+        });
+    </script>
+</body>
+</html>
+
+
