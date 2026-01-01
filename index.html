@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tallgrass</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -15,7 +17,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #1a1a2e;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #90B77D 40%, #5C8A4D 100%);
         }
         
         #canvas {
@@ -25,35 +27,215 @@
             outline: none;
         }
         
-        #status {
+        #loading-screen {
             position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: #e0e0e0;
-            font-family: 'Courier New', monospace;
-        }
-        
-        #status-progress {
-            width: 300px;
-            height: 20px;
-            background: #333;
-            border: 2px solid #555;
-            margin: 10px auto;
-        }
-        
-        #status-progress-inner {
+            left: 0;
+            top: 0;
+            width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, #4a9eff, #00ff88);
-            width: 0%;
-            transition: width 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #90B77D 40%, #5C8A4D 100%);
+            transition: opacity 0.8s ease-out;
         }
         
-        #status-notice {
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .wheat-container {
+            position: relative;
+            width: 120px;
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        
+        .wheat-stalk {
+            position: absolute;
+            bottom: 0;
+            width: 6px;
+            background: linear-gradient(180deg, #C4A962 0%, #8B7355 100%);
+            border-radius: 3px;
+            transform-origin: bottom center;
+            transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .wheat-stalk.main {
+            height: 0px;
+            z-index: 3;
+        }
+        
+        .wheat-stalk.left {
+            transform: rotate(-12deg);
+            left: 35px;
+            height: 0px;
+            z-index: 2;
+        }
+        
+        .wheat-stalk.right {
+            transform: rotate(12deg);
+            right: 35px;
+            height: 0px;
+            z-index: 2;
+        }
+        
+        .wheat-head {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease, bottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .wheat-head.visible {
+            opacity: 1;
+        }
+        
+        .wheat-grain {
+            position: absolute;
+            width: 8px;
+            height: 16px;
+            background: linear-gradient(135deg, #DAA520 0%, #B8860B 50%, #8B7355 100%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            transform-origin: bottom center;
+        }
+        
+        .wheat-grain:nth-child(1) { left: 6px; bottom: 0; transform: rotate(-15deg); }
+        .wheat-grain:nth-child(2) { left: 0; bottom: 12px; transform: rotate(-25deg); }
+        .wheat-grain:nth-child(3) { left: 12px; bottom: 12px; transform: rotate(25deg); }
+        .wheat-grain:nth-child(4) { left: 3px; bottom: 24px; transform: rotate(-20deg); }
+        .wheat-grain:nth-child(5) { left: 9px; bottom: 24px; transform: rotate(20deg); }
+        .wheat-grain:nth-child(6) { left: 6px; bottom: 36px; transform: rotate(0deg); }
+        
+        .loading-text {
+            font-family: 'Caveat', cursive;
+            font-size: 32px;
+            color: #5C4033;
+            margin-top: 30px;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
+        }
+        
+        .loading-percent {
+            font-family: 'Caveat', cursive;
+            font-size: 24px;
+            color: #8B7355;
             margin-top: 10px;
-            font-size: 14px;
-            color: #888;
+        }
+        
+        /* Gentle sway animation once grown */
+        @keyframes sway {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(2deg); }
+            75% { transform: rotate(-2deg); }
+        }
+        
+        .wheat-stalk.grown {
+            animation: sway 3s ease-in-out infinite;
+        }
+        
+        .wheat-stalk.left.grown {
+            animation: sway 3.2s ease-in-out infinite;
+            transform: rotate(-12deg);
+        }
+        
+        .wheat-stalk.right.grown {
+            animation: sway 2.8s ease-in-out infinite;
+            transform: rotate(12deg);
+        }
+        
+        /* Sun in corner */
+        .sun {
+            position: absolute;
+            top: 30px;
+            right: 50px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #FFD700 0%, #FFA500 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 40px #FFD700, 0 0 80px #FFA50066;
+        }
+        
+        /* Clouds */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+        }
+        
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        .cloud.c1 {
+            width: 100px;
+            height: 40px;
+            top: 60px;
+            left: 10%;
+            animation: float 20s linear infinite;
+        }
+        
+        .cloud.c1::before {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 15px;
+        }
+        
+        .cloud.c1::after {
+            width: 35px;
+            height: 35px;
+            top: -15px;
+            right: 15px;
+        }
+        
+        .cloud.c2 {
+            width: 80px;
+            height: 30px;
+            top: 100px;
+            left: 40%;
+            animation: float 25s linear infinite;
+            animation-delay: -5s;
+        }
+        
+        .cloud.c2::before {
+            width: 40px;
+            height: 40px;
+            top: -20px;
+            left: 10px;
+        }
+        
+        .cloud.c2::after {
+            width: 30px;
+            height: 30px;
+            top: -10px;
+            right: 10px;
+        }
+        
+        @keyframes float {
+            0% { transform: translateX(-150px); }
+            100% { transform: translateX(calc(100vw + 150px)); }
+        }
+        
+        /* Ground texture dots */
+        .ground-detail {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            pointer-events: none;
+            overflow: hidden;
         }
     </style>
     <link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
@@ -62,52 +244,80 @@
 </head>
 <body>
     <canvas id="canvas"></canvas>
-    <div id="status">
-        <div id="status-progress">
-            <div id="status-progress-inner"></div>
+    
+    <div id="loading-screen">
+        <div class="sun"></div>
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+        
+        <div class="wheat-container">
+            <!-- Main stalk -->
+            <div class="wheat-stalk main" id="stalk-main">
+                <div class="wheat-head" id="head-main">
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                </div>
+            </div>
+            
+            <!-- Left stalk -->
+            <div class="wheat-stalk left" id="stalk-left">
+                <div class="wheat-head" id="head-left">
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                </div>
+            </div>
+            
+            <!-- Right stalk -->
+            <div class="wheat-stalk right" id="stalk-right">
+                <div class="wheat-head" id="head-right">
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                    <div class="wheat-grain"></div>
+                </div>
+            </div>
         </div>
-        <div id="status-notice">Loading...</div>
+        
+        <div class="loading-text">Growing...</div>
+        <div class="loading-percent" id="loading-percent">0%</div>
     </div>
     
     <script>
         // --- mann.cool Virtual Controller Support ---
-        // This allows the game to receive input from mann.cool's virtual D-pad and buttons
-        // when embedded in an iframe on mobile devices
-        
         window.addEventListener('message', (event) => {
             const { type, key, eventType } = event.data || {};
             
-            // Resume Godot's audio context if suspended
-            // (Browser suspends audio when clicking outside the iframe)
             if (window.Godot && window.Godot.audio && window.Godot.audio.ctx) {
                 if (window.Godot.audio.ctx.state === 'suspended') {
                     window.Godot.audio.ctx.resume();
                 }
             }
             
-            // Handle keyboard events from virtual controller
             if (type === 'keyEvent' && key && eventType) {
                 const canvas = document.querySelector('#canvas');
                 if (canvas) {
-                    // Map mann.cool keys to Godot-compatible key codes
                     let mappedKey = key;
                     let mappedCode = key;
                     
-                    // Handle arrow keys
-                    if (key === 'ArrowUp') {
-                        mappedCode = 'ArrowUp';
-                    } else if (key === 'ArrowDown') {
-                        mappedCode = 'ArrowDown';
-                    } else if (key === 'ArrowLeft') {
-                        mappedCode = 'ArrowLeft';
-                    } else if (key === 'ArrowRight') {
-                        mappedCode = 'ArrowRight';
-                    } else if (key === ' ' || key === 'Space') {
+                    if (key === 'ArrowUp') mappedCode = 'ArrowUp';
+                    else if (key === 'ArrowDown') mappedCode = 'ArrowDown';
+                    else if (key === 'ArrowLeft') mappedCode = 'ArrowLeft';
+                    else if (key === 'ArrowRight') mappedCode = 'ArrowRight';
+                    else if (key === ' ' || key === 'Space') {
                         mappedKey = ' ';
                         mappedCode = 'Space';
                     }
                     
-                    // Dispatch the keyboard event to the canvas
                     canvas.dispatchEvent(new KeyboardEvent(eventType, {
                         key: mappedKey,
                         code: mappedCode,
@@ -116,7 +326,6 @@
                         view: window
                     }));
                     
-                    // Also dispatch to document for Godot's input system
                     document.dispatchEvent(new KeyboardEvent(eventType, {
                         key: mappedKey,
                         code: mappedCode,
@@ -127,11 +336,9 @@
                 }
             }
             
-            // Handle click events (for attack/action buttons)
             if (type === 'clickEvent' && eventType) {
                 const canvas = document.querySelector('#canvas');
                 if (canvas) {
-                    // Get canvas center for click position
                     const rect = canvas.getBoundingClientRect();
                     const centerX = rect.width / 2;
                     const centerY = rect.height / 2;
@@ -142,13 +349,12 @@
                         view: window,
                         clientX: rect.left + centerX,
                         clientY: rect.top + centerY,
-                        button: 0  // Left click
+                        button: 0
                     }));
                 }
             }
         });
         
-        // Detect if running in iframe and log it
         if (window.parent !== window) {
             console.log('Tallgrass: Running inside iframe (mann.cool mode)');
         }
@@ -159,48 +365,85 @@
         const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":432615948,"index.wasm":36145869},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
         const engine = new Engine(GODOT_CONFIG);
         
-        const statusProgress = document.getElementById('status-progress-inner');
-        const statusNotice = document.getElementById('status-notice');
-        const status = document.getElementById('status');
+        const loadingScreen = document.getElementById('loading-screen');
+        const loadingPercent = document.getElementById('loading-percent');
+        const stalkMain = document.getElementById('stalk-main');
+        const stalkLeft = document.getElementById('stalk-left');
+        const stalkRight = document.getElementById('stalk-right');
+        const headMain = document.getElementById('head-main');
+        const headLeft = document.getElementById('head-left');
+        const headRight = document.getElementById('head-right');
         
-        // Update loading progress
-        function setStatusProgress(progress) {
-            statusProgress.style.width = (progress * 100) + '%';
-        }
+        const MAX_HEIGHT = 200; // Max stalk height in pixels
         
-        function setStatusNotice(text) {
-            statusNotice.textContent = text;
-        }
-        
-        function displayFailure(message) {
-            statusNotice.textContent = message;
-            statusNotice.style.color = '#ff6b6b';
+        function updateWheatGrowth(progress) {
+            const height = progress * MAX_HEIGHT;
+            const sideHeight = progress * (MAX_HEIGHT * 0.7);
+            
+            // Grow the stalks
+            stalkMain.style.height = height + 'px';
+            stalkLeft.style.height = sideHeight + 'px';
+            stalkRight.style.height = sideHeight + 'px';
+            
+            // Position wheat heads at top of stalks
+            headMain.style.bottom = (height - 10) + 'px';
+            headLeft.style.bottom = (sideHeight - 10) + 'px';
+            headRight.style.bottom = (sideHeight - 10) + 'px';
+            
+            // Show heads after 30% progress
+            if (progress > 0.3) {
+                headMain.classList.add('visible');
+            }
+            if (progress > 0.4) {
+                headLeft.classList.add('visible');
+                headRight.classList.add('visible');
+            }
+            
+            // Add sway when fully grown
+            if (progress >= 1) {
+                stalkMain.classList.add('grown');
+                stalkLeft.classList.add('grown');
+                stalkRight.classList.add('grown');
+            }
+            
+            // Update percentage text
+            loadingPercent.textContent = Math.round(progress * 100) + '%';
         }
         
         // Start the engine
         engine.startGame({
             'onProgress': function(current, total) {
                 if (total > 0) {
-                    setStatusProgress(current / total);
-                    setStatusNotice('Loading... ' + Math.round((current / total) * 100) + '%');
+                    const progress = current / total;
+                    updateWheatGrowth(progress);
                 }
             }
         }).then(() => {
-            // Game loaded successfully
-            status.style.display = 'none';
+            // Game loaded successfully - let the wheat finish growing
+            updateWheatGrowth(1);
+            
+            // Wait a moment to show the full wheat, then fade out
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                
+                // Remove from DOM after fade
+                setTimeout(() => {
+                    loadingScreen.remove();
+                }, 800);
+            }, 500);
+            
             console.log('Tallgrass: Game loaded successfully');
             
-            // Focus the canvas for keyboard input
             const canvas = document.getElementById('canvas');
             if (canvas) {
                 canvas.focus();
             }
         }).catch((err) => {
-            displayFailure('Error: ' + err.message);
+            loadingPercent.textContent = 'Error: ' + err.message;
+            loadingPercent.style.color = '#8B0000';
             console.error('Tallgrass: Failed to load game', err);
         });
     </script>
 </body>
 </html>
-
 
